@@ -328,9 +328,13 @@ function fmtAnswer(raw){
   const inl=s=>{ s=s.replace(/\[\[([^\]]+?)\]\]/g,'<span class="key">★ $1</span>');
     s=s.replace(/^([^<\n=:–—-]{2,64}?)(\s*[=:–—-]\s)/,"<b>$1</b>$2");
     return s.replace(/\b(Mechanical digestion|Chemical digestion|Physical digestion)\b/g,"<b>$1</b>"); };
+  const stars=s=>s.replace(/\[\[([^\]]+?)\]\]/g,'<span class="key">★ $1</span>');
+  const subB=s=>s.replace(/\b(Mechanical digestion|Chemical digestion|Physical digestion)\b/g,"<b>$1</b>");
+  const LBL=/^([A-Za-z0-9][A-Za-z0-9 ()\/'’.+-]{1,52}?)(\s[-–=]\s)([\s\S]+)$/;
+  const item=r=>{ const m=r.match(LBL); return m ? "<b>"+esc(m[1])+"</b>"+esc(m[2])+subB(stars(esc(m[3]))) : inl(esc(r)); };
   const blocks=t.split(/\n+/).map(b=>b.trim()).filter(Boolean);
   let html="", buf=[], bt="";
-  const flush=()=>{ if(buf.length){ html+="<"+bt+" class='ans'>"+buf.map(i=>"<li>"+inl(esc(i))+"</li>").join("")+"</"+bt+">"; buf=[]; bt=""; } };
+  const flush=()=>{ if(buf.length){ html+="<"+bt+" class='ans'>"+buf.map(i=>"<li>"+item(i)+"</li>").join("")+"</"+bt+">"; buf=[]; bt=""; } };
   const push=(type,item)=>{ if(bt&&bt!==type) flush(); bt=type; buf.push(item); };
   for(const b of blocks){
     const nums=b.match(/(?:^|\s)\(?\d{1,2}[.)]\s/g);
@@ -339,13 +343,19 @@ function fmtAnswer(raw){
       const parts=b.split(/(?:^|\s)(?=\(?\d{1,2}[.)]\s)/).map(x=>x.trim()).filter(Boolean);
       let intro=""; if(!/^\(?\d{1,2}[.)]/.test(parts[0])) intro=parts.shift();
       if(intro) html+="<p>"+inl(esc(intro))+"</p>";
-      html+="<ol class='ans'>"+parts.map(p=>"<li>"+inl(esc(p.replace(/^\(?\d{1,2}[.)]\s*/,"")))+"</li>").join("")+"</ol>";
+      html+="<ol class='ans'>"+parts.map(p=>"<li>"+item(p.replace(/^\(?\d{1,2}[.)]\s*/,""))+"</li>").join("")+"</ol>";
       continue;
     }
     let m;
     if((m=b.match(/^\(?\d{1,2}[.)]\s+([\s\S]*)/))){ push("ol", m[1]); }   // one numbered item (multi-block list)
     else if((m=b.match(/^[-•*]\s+([\s\S]*)/))){ push("ul", m[1]); }
-    else{ flush(); html+="<p>"+inl(esc(b))+"</p>"; }
+    else{
+      const G=/(?:^|[.;]\s)[A-Z][A-Za-z0-9 ()\/'’.+-]{1,48}?\s[-–=]\s/g; let lc=0; while(G.exec(b)) lc++;
+      let done=false;
+      if(lc>=3){ const its=b.split(/(?<=[.;])\s+(?=[A-Z][A-Za-z0-9 ()\/'’.+-]{1,48}?\s[-–=]\s)/).map(x=>x.trim()).filter(Boolean);
+        if(its.length>=3){ flush(); html+="<ul class='ans'>"+its.map(it=>"<li>"+item(it)+"</li>").join("")+"</ul>"; done=true; } }
+      if(!done){ flush(); html+="<p>"+inl(esc(b))+"</p>"; }
+    }
   }
   flush();
   return html;
