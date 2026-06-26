@@ -157,6 +157,17 @@
   .ta:focus{outline:none;border-color:var(--acc)}
   .chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
   .promptout{white-space:pre-wrap;background:var(--bg3);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13.5px;line-height:1.5;max-height:340px;overflow:auto;margin:8px 0}
+  /* Read-aloud (TTS) */
+  #ttsChip{position:absolute;z-index:61;display:none;background:var(--acc);color:#fff;border:none;border-radius:999px;padding:7px 13px;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 5px 16px rgba(0,0,0,.4)}
+  #ttsChip.show{display:inline-block}
+  #ttsChip:hover{filter:brightness(1.08)}
+  #ttsBar{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:60;display:none;align-items:center;gap:10px;flex-wrap:wrap;max-width:94vw;background:var(--glass-bg-strong);-webkit-backdrop-filter:blur(14px) saturate(150%);backdrop-filter:blur(14px) saturate(150%);border:1px solid var(--line);border-radius:14px;padding:9px 12px;box-shadow:var(--elev-3)}
+  #ttsBar.show{display:flex}
+  #ttsBar .iconbtn{font-size:15px;min-width:34px}
+  #ttsBar select{max-width:160px}
+  #ttsBar input[type=range]{width:90px;vertical-align:middle}
+  .ttsLbl{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--mut)}
+  @media print{#ttsBar,#ttsChip{display:none !important}}
   /* Print cheat sheet */
   #printSheet{display:none}
   @media print{
@@ -304,6 +315,7 @@
   <div class="top">
     <div class="brand">Test 3 Cram<small>Health Science 1 · Bachelor of Nursing · pass = 50%</small></div>
     <div class="spacer" style="flex:1"></div>
+    <button class="iconbtn" id="ttsBtn" title="Read aloud — select text, then 🔊">🔊</button>
     <button class="iconbtn" id="printBtn" title="Print / save 1-page cheat sheet as PDF">🖨</button>
     <button class="iconbtn" id="themeBtn" title="Toggle light/dark">◐</button>
     <button class="iconbtn" id="resetBtn" title="Reset progress">↺</button>
@@ -329,6 +341,18 @@
 </div>
 
 <div id="printSheet"></div>
+
+<button id="ttsChip" aria-label="Read selection aloud">🔊 Read aloud</button>
+<div id="ttsBar" aria-hidden="true">
+  <button class="iconbtn" id="ttsRead" title="Read the selected text">🔊 Read selection</button>
+  <button class="iconbtn" id="ttsPlay" title="Play / pause">▶</button>
+  <button class="iconbtn" id="ttsStop" title="Stop">⏹</button>
+  <label class="ttsLbl"><input type="checkbox" id="ttsLoop"> 🔁 loop</label>
+  <label class="ttsLbl">voice <select id="ttsVoice"></select></label>
+  <label class="ttsLbl">speed <input type="range" id="ttsRate" min="0.6" max="1.4" step="0.05" value="1"></label>
+  <span class="kpi" id="ttsStatus">idle</span>
+  <button class="iconbtn" id="ttsClose" title="Close" style="margin-left:auto">✕</button>
+</div>
 
 <footer>Built as an offline cram tool — works with no internet. Your progress is saved on this device only. Ka taea e koe! 💪</footer>
 
@@ -1098,6 +1122,93 @@ function buildPrintSheet(){
       <table><thead><tr><th>Nutrient</th><th>Function</th><th>If lacking</th></tr></thead><tbody>${nutRows}</tbody></table></div>
     </div>
   </div>`;
+}
+
+/* ---------- read aloud (TTS) ---------- */
+const TTS_OK = ("speechSynthesis" in window) && ("SpeechSynthesisUtterance" in window);
+const TTS = {
+  voices:[], voice:null, rate:(+LS.get("ttsRate",1))||1, loop:false, lastSel:"", chunks:[], idx:0, active:false,
+  refresh(){
+    let vs=speechSynthesis.getVoices();
+    this.voices = vs.filter(v=>/^en/i.test(v.lang));
+    if(!this.voices.length) this.voices = vs;
+    const saved=LS.get("ttsVoiceName","");
+    let v = (saved && this.voices.find(x=>x.name===saved));
+    if(!v) v = this.voices.find(x=>/\bava\b/i.test(x.name));            // Microsoft Ava (Edge, online)
+    if(!v) v = this.voices.find(x=>/natural/i.test(x.name)&&/^en/i.test(x.lang));  // any natural voice
+    if(!v) v = this.voices.find(x=>/microsoft/i.test(x.name)&&/en[-_]?us/i.test(x.lang));
+    if(!v) v = this.voices.find(x=>/en[-_]?us/i.test(x.lang)) || this.voices[0] || null;
+    this.voice = v;
+    this.fillSelect();
+  },
+  fillSelect(){
+    const sel=$("#ttsVoice"); if(!sel) return;
+    sel.innerHTML = this.voices.length
+      ? this.voices.map(v=>`<option value="${esc(v.name)}"${this.voice&&v.name===this.voice.name?" selected":""}>${esc(v.name.replace(/Microsoft\s*/i,"").replace(/\s*Online.*$/i,"").replace(/\s*\(.*$/,""))}</option>`).join("")
+      : `<option>(system voices)</option>`;
+  },
+  speak(text){
+    if(!TTS_OK || !text || !text.trim()) return;
+    showTtsBar();
+    speechSynthesis.cancel();
+    this.chunks = (text.replace(/\s+/g," ").match(/[^.!?;:]+[.!?;:]*/g) || [text]).map(s=>s.trim()).filter(Boolean);
+    this.idx=0; this.active=true; this._next();
+  },
+  _next(){
+    if(!this.active) return;
+    if(this.idx>=this.chunks.length){ if(this.loop){ this.idx=0; } else { this.active=false; updateTtsUi(); return; } }
+    const u=new SpeechSynthesisUtterance(this.chunks[this.idx]);
+    if(this.voice) u.voice=this.voice;
+    u.rate=this.rate; u.pitch=1;
+    u.onend=()=>{ if(!this.active) return; this.idx++; this._next(); };
+    u.onerror=()=>{ this.active=false; updateTtsUi(); };
+    speechSynthesis.speak(u); updateTtsUi();
+  },
+  pause(){ if(speechSynthesis.speaking && !speechSynthesis.paused) speechSynthesis.pause(); updateTtsUi(); },
+  resume(){ if(speechSynthesis.paused) speechSynthesis.resume(); updateTtsUi(); },
+  toggle(){ if(speechSynthesis.paused) this.resume(); else if(speechSynthesis.speaking) this.pause(); else if(this.chunks.length){ this.active=true; this.idx=0; this._next(); } },
+  stop(){ this.active=false; speechSynthesis.cancel(); updateTtsUi(); }
+};
+function updateTtsUi(){
+  const p=$("#ttsPlay"); if(p) p.textContent = (speechSynthesis.speaking && !speechSynthesis.paused) ? "⏸" : "▶";
+  const s=$("#ttsStatus"); if(s) s.textContent = !TTS.active ? "idle" : (speechSynthesis.paused ? "paused" : (TTS.loop ? "looping…" : "reading…"));
+}
+function showTtsBar(){ const b=$("#ttsBar"); if(b){ b.classList.add("show"); b.setAttribute("aria-hidden","false"); } }
+function positionTtsChip(){
+  if(!TTS_OK) return;
+  const chip=$("#ttsChip"); if(!chip) return;
+  const sel=window.getSelection(); const t=sel?sel.toString().trim():"";
+  if(!t || t.length<2){ chip.classList.remove("show"); return; }
+  TTS.lastSel=t;
+  try{
+    const r=sel.getRangeAt(0).getBoundingClientRect();
+    if(!r.width && !r.height){ chip.classList.remove("show"); return; }
+    chip.classList.add("show");
+    chip.style.top=(window.scrollY + r.top - chip.offsetHeight - 8)+"px";
+    chip.style.left=Math.max(8, window.scrollX + r.left + r.width/2 - chip.offsetWidth/2)+"px";
+  }catch(e){ chip.classList.remove("show"); }
+}
+if(TTS_OK){
+  TTS.refresh();
+  speechSynthesis.onvoiceschanged=()=>TTS.refresh();
+  const rEl=$("#ttsRate"); if(rEl) rEl.value=TTS.rate;
+  document.addEventListener("mouseup",()=>setTimeout(positionTtsChip,10));
+  document.addEventListener("touchend",()=>setTimeout(positionTtsChip,10),{passive:true});
+  document.addEventListener("selectionchange",()=>{ const t=window.getSelection().toString().trim(); if(!t){ const c=$("#ttsChip"); if(c) c.classList.remove("show"); } });
+  const chip=$("#ttsChip");
+  chip.addEventListener("mousedown",e=>e.preventDefault());           // keep the selection
+  chip.onclick=()=>{ chip.classList.remove("show"); TTS.speak(TTS.lastSel); };
+  $("#ttsBtn").onclick=()=>{ const b=$("#ttsBar"); b.classList.toggle("show"); };
+  $("#ttsRead").onclick=()=>{ const t=(window.getSelection().toString().trim())||TTS.lastSel; if(t){ TTS.speak(t); } else { $("#ttsStatus").textContent="select some text first"; } };
+  $("#ttsPlay").onclick=()=>TTS.toggle();
+  $("#ttsStop").onclick=()=>TTS.stop();
+  $("#ttsLoop").onchange=e=>{ TTS.loop=e.target.checked; updateTtsUi(); };
+  $("#ttsVoice").onchange=e=>{ TTS.voice=TTS.voices.find(v=>v.name===e.target.value)||TTS.voice; LS.set("ttsVoiceName",e.target.value); };
+  $("#ttsRate").oninput=e=>{ TTS.rate=+e.target.value||1; LS.set("ttsRate",TTS.rate); };
+  $("#ttsClose").onclick=()=>{ TTS.stop(); $("#ttsBar").classList.remove("show"); };
+  window.addEventListener("beforeunload",()=>{ try{speechSynthesis.cancel();}catch(e){} });
+} else {
+  const tb=$("#ttsBtn"); if(tb) tb.style.display="none";
 }
 
 /* ---------- theme + reset ---------- */
