@@ -30,8 +30,22 @@
   .spacer{flex:1}
   .iconbtn{background:var(--bg2);border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:7px 10px;font-size:13px;cursor:pointer}
   .iconbtn:hover{border-color:var(--acc)}
-  nav.tabs{display:flex;gap:6px;overflow-x:auto;padding:10px 16px 0;max-width:920px;margin:0 auto;scrollbar-width:none}
-  nav.tabs::-webkit-scrollbar{display:none}
+  .tabwrap{position:relative;max-width:920px;margin:0 auto}
+  nav.tabs{display:flex;gap:6px;overflow-x:auto;padding:10px 16px 9px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+  nav.tabs::-webkit-scrollbar{height:7px}
+  nav.tabs::-webkit-scrollbar-track{background:transparent;margin:0 16px}
+  nav.tabs::-webkit-scrollbar-thumb{background:var(--line);border-radius:999px}
+  nav.tabs::-webkit-scrollbar-thumb:hover{background:var(--mut)}
+  .tabnav{position:absolute;top:6px;width:28px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--bg2);color:var(--txt);font-weight:700;font-size:19px;line-height:1;cursor:pointer;z-index:3;display:none;align-items:center;justify-content:center;box-shadow:0 2px 9px rgba(0,0,0,.3)}
+  .tabnav:hover{border-color:var(--acc);color:var(--acc)}
+  .tabnav.left{left:0} .tabnav.right{right:0}
+  .tabwrap.more-left .tabnav.left{display:inline-flex}
+  .tabwrap.more-right .tabnav.right{display:inline-flex}
+  .tabwrap::before,.tabwrap::after{content:"";position:absolute;top:0;bottom:9px;width:42px;pointer-events:none;z-index:2;opacity:0;transition:opacity .2s}
+  .tabwrap::after{right:0;background:linear-gradient(270deg,var(--glass-bg-strong),transparent)}
+  .tabwrap::before{left:0;background:linear-gradient(90deg,var(--glass-bg-strong),transparent)}
+  .tabwrap.more-right::after{opacity:1}
+  .tabwrap.more-left::before{opacity:1}
   .tab{white-space:nowrap;border:1px solid var(--line);background:var(--bg2);color:var(--mut);padding:9px 14px;border-radius:999px;cursor:pointer;font-size:14px;font-weight:600}
   .tab.active{background:var(--acc);border-color:var(--acc);color:#fff}
   .view{display:none;animation:fade .25s ease}
@@ -64,7 +78,8 @@
   .a p{margin:.55em 0} .a p:first-child{margin-top:0} .a p:last-child{margin-bottom:0}
   .a ol.ans,.a ul.ans{margin:.4em 0;padding-left:1.45em} .a ol.ans li,.a ul.ans li{margin:.4em 0;padding-left:.15em}
   .a b{color:var(--txt);font-weight:700}
-  .key{color:var(--good);font-weight:700} .key::first-letter{font-size:1.05em}
+  .key{color:var(--good);font-weight:700}
+  @media (hover:none){ .srjump,.smbtn,.iconbtn{min-height:42px} .tab{padding:11px 16px} .opt{padding:14px 14px} }
   table{width:100%;border-collapse:collapse;margin:8px 0;font-size:14px}
   th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
   th{background:var(--bg3);color:var(--acc)}
@@ -76,12 +91,12 @@
   .btn:disabled{opacity:.45;cursor:default}
   .prog{height:8px;background:var(--bg3);border-radius:999px;overflow:hidden;margin:10px 0}
   .prog>i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));width:0}
-  .opt{display:block;width:100%;text-align:left;background:var(--bg3);border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:12px 14px;margin:8px 0;cursor:pointer;font-size:15px}
+  .opt{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;width:100%;text-align:left;background:var(--bg3);border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:12px 14px;margin:8px 0;cursor:pointer;font-size:15px}
   .opt:hover{border-color:var(--acc)}
   .opt.sel{border-color:var(--acc);background:var(--chip)}
   .opt.correct{background:var(--good-bg);border-color:var(--good)}
   .opt.wrong{background:var(--bad-bg);border-color:var(--bad)}
-  .opt .mk{float:right;font-weight:800}
+  .opt .mk{font-weight:800;flex-shrink:0}
   .expl{margin:8px 0;padding:10px 12px;border-radius:10px;background:var(--bg3);border-left:3px solid var(--acc);font-size:14px;display:none}
   .expl.show{display:block}
   .qmeta{color:var(--mut);font-size:13px;margin-bottom:4px}
@@ -106,7 +121,7 @@
   .note{background:var(--warn-bg);border:1px solid var(--warn);color:var(--txt);border-radius:10px;padding:10px 12px;font-size:13.5px}
   footer{color:var(--mut);font-size:12px;text-align:center;padding:24px 0}
   /* Exam mode */
-  .examBar{position:sticky;top:60px;z-index:20;display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--acc);border-radius:12px;padding:10px 14px;margin:10px 0;box-shadow:var(--sh)}
+  .examBar{position:sticky;top:calc(var(--hdr,112px) + 6px);z-index:20;display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--acc);border-radius:12px;padding:10px 14px;margin:10px 0;box-shadow:var(--sh)}
   .timer{font-variant-numeric:tabular-nums;font-weight:800;font-size:22px;min-width:64px}
   .timer.low{color:var(--bad)}
   .exq{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:10px 0}
@@ -293,7 +308,11 @@
     <button class="iconbtn" id="themeBtn" title="Toggle light/dark">◐</button>
     <button class="iconbtn" id="resetBtn" title="Reset progress">↺</button>
   </div>
-  <nav class="tabs" id="tabs"></nav>
+  <div class="tabwrap">
+    <button class="tabnav left" id="tabL" aria-label="Scroll tabs left">‹</button>
+    <nav class="tabs" id="tabs"></nav>
+    <button class="tabnav right" id="tabR" aria-label="Scroll tabs right">›</button>
+  </div>
 </header>
 
 <div class="wrap">
@@ -341,6 +360,7 @@ function fmtAnswer(raw){
     if(nums && nums.length>=2){            // a single block holding several "1) .. 2) .." or "(1) .. (2) .." items
       flush();
       const parts=b.split(/(?:^|\s)(?=\(?\d{1,2}[.)]\s)/).map(x=>x.trim()).filter(Boolean);
+      if(!parts.length){ html+="<p>"+inl(b)+"</p>"; continue; }
       let intro=""; if(!/^\(?\d{1,2}[.)]/.test(parts[0])) intro=parts.shift();
       if(intro) html+="<p>"+inl(esc(intro))+"</p>";
       html+="<ol class='ans'>"+parts.map(p=>"<li>"+item(p.replace(/^\(?\d{1,2}[.)]\s*/,""))+"</li>").join("")+"</ol>";
@@ -352,7 +372,7 @@ function fmtAnswer(raw){
     else{
       const G=/(?:^|[.;]\s)[A-Z][A-Za-z0-9 ()\/'’.+-]{1,48}?\s[-–=]\s/g; let lc=0; while(G.exec(b)) lc++;
       let done=false;
-      if(lc>=3){ const its=b.split(/(?<=[.;])\s+(?=[A-Z][A-Za-z0-9 ()\/'’.+-]{1,48}?\s[-–=]\s)/).map(x=>x.trim()).filter(Boolean);
+      if(lc>=3){ const its=b.replace(/([.;])\s+(?=[A-Z][A-Za-z0-9 ()\/'’.+-]{1,48}?\s[-–=]\s)/g,"$1|@@|").split("|@@|").map(x=>x.trim()).filter(Boolean);
         if(its.length>=3){ flush(); html+="<ul class='ans'>"+its.map(it=>"<li>"+item(it)+"</li>").join("")+"</ul>"; done=true; } }
       if(!done){ flush(); html+="<p>"+inl(esc(b))+"</p>"; }
     }
@@ -371,7 +391,11 @@ let tutorMode="explain", tutorPrefill="", tutorItems=[];
 const ALLQ = [];
 (DATA.quizzes||[]).forEach(q=>{
   (q.questions||[]).forEach((it,i)=>{
-    if(it.type==="mcq" && Array.isArray(it.options) && it.options.length){
+    const okMcq = it.type==="mcq" && Array.isArray(it.options) && it.options.length>=2 &&
+      ((it.multi && Array.isArray(it.correctIndexes))
+        ? it.correctIndexes.length>0 && it.correctIndexes.every(x=>Number.isInteger(x)&&x>=0&&x<it.options.length)
+        : Number.isInteger(it.correctIndex) && it.correctIndex>=0 && it.correctIndex<it.options.length);
+    if(okMcq){
       ALLQ.push({uid:q.id+"_"+i, topic:q.topic, quiz:q.title, ...it});
     }
   });
@@ -395,6 +419,8 @@ function setView(k){
   $$(".tab").forEach(t=>t.classList.toggle("active",t.dataset.k===k));
   $$(".view").forEach(v=>v.classList.toggle("active",v.dataset.view===k));
   LS.set("tab",k);
+  const at=$(`.tab[data-k="${k}"]`); if(at) at.scrollIntoView({inline:"nearest",block:"nearest"});
+  if(typeof updateTabScroll==="function") updateTabScroll();
   window.scrollTo({top:0});
 }
 const tabsEl = $("#tabs");
@@ -404,6 +430,20 @@ TABS.forEach(t=>{
   b.onclick=()=>setView(t.k);
   tabsEl.appendChild(b);
 });
+/* tab-overflow affordance: show chevrons + fade + scrollbar when there are more tabs */
+function updateTabScroll(){
+  const w=$(".tabwrap"); if(!w) return;
+  const max=tabsEl.scrollWidth-tabsEl.clientWidth;
+  w.classList.toggle("more-left", tabsEl.scrollLeft>4);
+  w.classList.toggle("more-right", max>4 && tabsEl.scrollLeft<max-4);
+}
+tabsEl.addEventListener("scroll",updateTabScroll,{passive:true});
+window.addEventListener("resize",updateTabScroll);
+window.addEventListener("load",updateTabScroll);
+function setHdr(){ const h=$("header"); if(h) document.documentElement.style.setProperty("--hdr", h.offsetHeight+"px"); }
+window.addEventListener("resize",setHdr); window.addEventListener("load",setHdr); setHdr();
+$("#tabL").onclick=()=>tabsEl.scrollBy({left:-240,behavior:"smooth"});
+$("#tabR").onclick=()=>tabsEl.scrollBy({left:240,behavior:"smooth"});
 
 /* ---------- PASS PLAN ---------- */
 function renderPlan(){
@@ -687,9 +727,10 @@ function renderCard(){
   const c=fcState.cards[fcState.idx];
   $("#fcCard").classList.remove("flip");
   if(!c){$("#fcFront").textContent="No cards";$("#fcBack").textContent="";$("#fcKpi").textContent="";return;}
-  $("#fcFront").textContent=c.front;
-  $("#fcBack").textContent=c.back;
-  $("#fcKpi").textContent=`${fcState.idx+1} / ${fcState.cards.length} · ${c.topic}`;
+  $("#fcFront").textContent=c.front||"";
+  $("#fcBack").textContent=c.back||"";
+  $("#fcKpi").textContent=`${fcState.idx+1} / ${fcState.cards.length} · ${c.topic||""}`;
+  const fi=$(".fcInner"); if(fi){ fi.style.height="auto"; fi.style.height=Math.max($("#fcFront").scrollHeight,$("#fcBack").scrollHeight,200)+"px"; }
 }
 
 /* ---------- SEARCH & GLOSSARY ---------- */
@@ -709,7 +750,13 @@ function buildSearchIndex(){
 }
 const SEARCH_IDX = buildSearchIndex();
 function reEsc(s){return s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}
-function hl(text,terms){ let t=esc(text); terms.forEach(term=>{ if(term.length<2)return; t=t.replace(new RegExp("("+reEsc(term)+")","ig"),"<mark>$1</mark>"); }); return t; }
+function hl(text,terms){
+  const ts=terms.filter(t=>t&&t.length>=2).map(reEsc).sort((a,b)=>b.length-a.length);
+  if(!ts.length) return esc(text);
+  const re=new RegExp("("+ts.join("|")+")","ig");
+  let out="",last=0,m; while((m=re.exec(text))!==null){ out+=esc(text.slice(last,m.index))+"<mark>"+esc(m[0])+"</mark>"; last=m.index+m[0].length; if(m.index===re.lastIndex) re.lastIndex++; }
+  return out+esc(text.slice(last));
+}
 function snippet(text,q){ if(text.length<=200) return text; const i=text.toLowerCase().indexOf(q); if(i<0) return text.slice(0,200)+"…"; const s=Math.max(0,i-70); return (s>0?"…":"")+text.slice(s,s+200)+(s+200<text.length?"…":""); }
 function tabLabel(k){ const t=TABS.find(x=>x.k===k); return t?t.label.replace(/^\S+\s/,""):k; }
 function renderSearch(){
@@ -728,7 +775,7 @@ function doSearch(qraw){
   const q=(qraw||"").trim().toLowerCase(), box=$("#searchResults");
   if(!box) return;
   if(!q){
-    const gl=(DATA.glossary||[]).slice().sort((a,b)=>a.term.localeCompare(b.term));
+    const gl=(DATA.glossary||[]).filter(g=>g&&g.term).slice().sort((a,b)=>String(a.term).localeCompare(String(b.term)));
     if(!gl.length){ box.innerHTML=`<p class="muted" style="margin-top:12px">Type above to search every question, answer, note and flashcard in the app.</p>`; return; }
     tutorItems = gl.map(g=>({title:g.term, text:g.definition}));
     box.innerHTML=`<p class="muted" style="margin:12px 0 4px">📖 Glossary — ${gl.length} terms (or type above to search everything):</p>`+
@@ -902,13 +949,16 @@ function renderExamResults(auto){
   const saqMax=csqs.reduce((a,q)=>a+(q.marks||2),0);
   function recalc(){
     let saq=0; csqs.forEach((q,i)=>{ if(e.selfmarks[i]!=null) saq+=e.selfmarks[i]*(q.marks||2); });
-    const total=mcqTotal+saqMax, got=e.mcqCorrect+saq, pct=total?Math.round(got/total*100):0, pass=pct>=50;
-    const allMarked=csqs.every((q,i)=>e.selfmarks[i]!=null);
+    const hasM=mcqTotal>0, hasS=saqMax>0;                 // each present section is worth half
+    const mw=hasM?(hasS?50:100):0, sw=hasS?(hasM?50:100):0;
+    const pct=Math.round((hasM?e.mcqCorrect/mcqTotal:0)*mw + (hasS?saq/saqMax:0)*sw);
+    const pass=pct>=50;
+    const allMarked=!csqs.length || csqs.every((q,i)=>e.selfmarks[i]!=null);
     const head=$("#exResHead");
     if(head) head.innerHTML=`<div class="resultBig ${pass?"pass":"fail"}">${pct}%</div>
-      <p class="lead">${pass?"PASS ✅ — above the 50% line":"Below 50% ❌ — keep grinding"}${allMarked||!csqs.length?"":` · <span class="muted">self-mark Section B to finalise</span>`}</p>
-      <div class="kpi">MCQ ${e.mcqCorrect}/${mcqTotal}${csqs.length?` · Written (self-marked) ${saq.toFixed(1)}/${saqMax}`:""}</div>`;
-    LS.set("lastExam",{pct,pass,mcqCorrect:e.mcqCorrect,mcqTotal});
+      <p class="lead">${pass?"PASS ✅ — above the 50% line":"Below 50% ❌ — keep grinding"}${allMarked?"":` · <span class="muted">self-mark Section B to finalise</span>`}</p>
+      <div class="kpi">MCQ ${e.mcqCorrect}/${mcqTotal}${csqs.length?` · Written (self-marked) ${saq.toFixed(1)}/${saqMax}`:""}${hasM&&hasS?" · each section = half the score":""}</div>`;
+    if(allMarked) LS.set("lastExam",{pct,pass,mcqCorrect:e.mcqCorrect,mcqTotal});   // only persist once finalised
   }
   let h=`<div class="card center"><h2>🎓 Results${auto?" (time up)":""}</h2><div id="exResHead"></div>
      <div class="row" style="justify-content:center;margin-top:12px"><button class="btn" id="exAgain">New mock exam</button> <button class="btn ghost" id="exReview">Show MCQ review ▾</button></div></div>`;
@@ -1039,7 +1089,7 @@ function buildPrintSheet(){
 /* ---------- theme + reset ---------- */
 function applyTheme(){const t=LS.get("theme","dark");document.documentElement.setAttribute("data-theme",t);}
 $("#themeBtn").onclick=()=>{const t=LS.get("theme","dark")==="dark"?"light":"dark";LS.set("theme",t);applyTheme();};
-$("#resetBtn").onclick=()=>{ if(confirm("Reset all progress (scores & wrong-answer log)?")){["seen","correct","wrong"].forEach(k=>LS.set(k,{}));renderPlan();renderMCQshell();} };
+$("#resetBtn").onclick=()=>{ if(confirm("Reset all progress (scores, wrong-answer log & last mock exam)?")){["seen","correct","wrong"].forEach(k=>LS.set(k,{}));LS.set("lastExam",null);examState=null;if(examTimer)clearInterval(examTimer);renderPlan();renderMCQshell();renderExam();} };
 $("#printBtn").onclick=()=>{ buildPrintSheet(); window.print(); };
 
 /* ---------- init ---------- */
