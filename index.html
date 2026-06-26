@@ -156,9 +156,131 @@
     #printSheet .box{break-inside:avoid}
     @page{margin:9mm}
   }
+
+  /* ======================= LIQUID GLASS ======================= */
+  /* §0 tokens */
+  :root{
+    --glass-bg:rgba(22,27,34,.62); --glass-bg-strong:rgba(22,27,34,.9); --glass-bg-soft:rgba(28,34,48,.5);
+    --glass-blur:14px; --glass-sat:180%;
+    --glass-rim:linear-gradient(135deg,rgba(255,255,255,.42) 0%,rgba(150,190,255,.20) 9%,rgba(255,255,255,.10) 20%,rgba(255,255,255,0) 47%,rgba(255,255,255,.05) 66%,rgba(255,210,160,.14) 89%,rgba(255,255,255,.22) 100%);
+    --glass-sheen:linear-gradient(180deg,rgba(255,255,255,.08),transparent 38%),linear-gradient(118deg,transparent 34%,rgba(255,255,255,.055) 45%,transparent 54%);
+    --rim-color:rgba(255,255,255,.13); --shade-color:rgba(0,0,0,.16);
+    --elev-1:0 2px 8px rgba(0,0,0,.30), inset 0 1px 0 var(--rim-color);
+    --elev-2:0 10px 26px -8px rgba(0,0,0,.50), 0 3px 10px rgba(0,0,0,.34), inset 0 1px 1px var(--rim-color), inset 0 -10px 22px var(--shade-color);
+    --elev-3:0 22px 50px -12px rgba(0,0,0,.60), 0 6px 16px rgba(0,0,0,.42), inset 0 1px 1px var(--rim-color), inset 0 -12px 26px var(--shade-color);
+    --ease-std:cubic-bezier(.4,0,.2,1); --ease-out:cubic-bezier(.22,1,.36,1); --dur-fast:130ms; --dur:220ms;
+  }
+  [data-theme="light"]{
+    --glass-bg:rgba(255,255,255,.60); --glass-bg-strong:rgba(255,255,255,.9); --glass-bg-soft:rgba(238,242,248,.6); --glass-sat:170%;
+    --glass-rim:linear-gradient(135deg,rgba(255,255,255,.95) 0%,rgba(150,185,255,.40) 9%,rgba(255,255,255,.45) 20%,rgba(255,255,255,0) 47%,rgba(255,255,255,.20) 66%,rgba(255,200,150,.30) 89%,rgba(255,255,255,.80) 100%);
+    --glass-sheen:linear-gradient(180deg,rgba(255,255,255,.55),transparent 40%),linear-gradient(118deg,transparent 36%,rgba(255,255,255,.30) 46%,transparent 55%);
+    --rim-color:rgba(255,255,255,.65); --shade-color:rgba(20,30,50,.07);
+    --elev-1:0 2px 8px rgba(20,30,50,.08), inset 0 1px 0 var(--rim-color);
+    --elev-2:0 12px 30px -10px rgba(20,30,50,.18), 0 3px 10px rgba(20,30,50,.10), inset 0 1px 1px var(--rim-color), inset 0 -10px 22px var(--shade-color);
+    --elev-3:0 20px 46px -12px rgba(20,30,50,.22), 0 5px 14px rgba(20,30,50,.12), inset 0 1px 1px var(--rim-color), inset 0 -12px 26px var(--shade-color);
+  }
+  /* §1 living background */
+  body{
+    background:
+      radial-gradient(60% 50% at 18% 8%, color-mix(in srgb, var(--acc) 10%, transparent), transparent 70%),
+      radial-gradient(55% 50% at 85% 22%, color-mix(in srgb, var(--acc2) 9%, transparent), transparent 70%),
+      var(--bg);
+    background-attachment:fixed;
+  }
+  .aurora{position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none; contain:strict}
+  .aurora span{position:absolute; border-radius:50%; filter:blur(90px); opacity:.30; mix-blend-mode:screen; will-change:transform}
+  [data-theme="light"] .aurora span{opacity:.42; filter:blur(80px); mix-blend-mode:multiply}
+  .aurora span:nth-child(1){width:620px;height:620px; top:-180px; left:-140px; background:var(--acc);  animation:auroraA 34s var(--ease-std) infinite}
+  .aurora span:nth-child(2){width:560px;height:560px; bottom:-200px; right:-160px; background:var(--acc2); animation:auroraB 42s var(--ease-std) infinite}
+  .aurora span:nth-child(3){width:440px;height:440px; top:38%; left:46%; background:var(--good); animation:auroraC 50s var(--ease-std) infinite}
+  @keyframes auroraA{0%,100%{transform:translate3d(0,0,0) scale(1)}35%{transform:translate3d(120px,80px,0) scale(1.12) rotate(28deg)}70%{transform:translate3d(40px,170px,0) scale(.92) rotate(-22deg)}}
+  @keyframes auroraB{0%,100%{transform:translate3d(0,0,0) scale(1)}40%{transform:translate3d(-130px,-70px,0) scale(1.10) rotate(-30deg)}75%{transform:translate3d(-50px,40px,0) scale(.94) rotate(24deg)}}
+  @keyframes auroraC{0%,100%{transform:translate3d(-50%,-50%,0) scale(1)}50%{transform:translate3d(calc(-50% + 90px), calc(-50% - 60px),0) scale(1.15)}}
+  /* §2 glass material (blurred surfaces) */
+  :where(.card,.acc,.fcFace,.examBar){
+    position:relative; isolation:isolate;
+    background:var(--glass-bg) !important;
+    -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
+    backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
+    border:1px solid transparent;
+    box-shadow:var(--elev-2);
+  }
+  :where(.card,.acc,.fcFace,.examBar,.sr)::before{
+    content:""; position:absolute; inset:0; border-radius:inherit; padding:1.4px; pointer-events:none; z-index:2;
+    background:var(--glass-rim);
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor;
+    mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite:exclude;
+  }
+  :where(.card,.acc,.fcFace)::after{content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:1; background:var(--glass-sheen)}
+  :where(.card,.acc,.fcFace,.examBar,.sr)>*{position:relative; z-index:3}
+  /* per-component */
+  .card{box-shadow:var(--elev-2)}
+  .acc{overflow:visible}
+  .acc>summary{border-radius:12px}
+  .acc .body{position:relative; z-index:3; background:transparent}
+  .acc .acc{background:var(--glass-bg-strong) !important; -webkit-backdrop-filter:none; backdrop-filter:none; box-shadow:var(--elev-1)}
+  .fcFace,.fcBack{background:var(--glass-bg-strong) !important}
+  .examBar{box-shadow:var(--elev-2)}
+  .sr{background:var(--glass-bg-strong) !important; -webkit-backdrop-filter:none; backdrop-filter:none; box-shadow:var(--elev-1); border-radius:12px}
+  /* §3 inner opaque wells (no blur, recessed) */
+  .stat,.qa .a,.expl,.promptout,.diagram,.prog{box-shadow:inset 0 1px 0 var(--rim-color), inset 0 -6px 14px var(--shade-color)}
+  .stat{border-radius:12px}
+  /* §4 micro-interactions */
+  .card,.acc,.sr{transition:transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); transform:translateY(0)}
+  .card:not(.tilt):hover{transform:translateY(-2px)}
+  .card:hover{box-shadow:var(--elev-3)}
+  .acc:hover{transform:translateY(-1px); box-shadow:var(--elev-3)}
+  .sr:hover{transform:translateY(-1px); box-shadow:var(--elev-2)}
+  .fc:hover .fcFace{box-shadow:var(--elev-3)}
+  .btn{
+    background:linear-gradient(180deg, color-mix(in srgb, var(--acc) 88%, #fff 12%), var(--acc));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.30), 0 4px 12px -2px color-mix(in srgb, var(--acc) 50%, transparent), 0 1px 2px rgba(0,0,0,.28);
+    transition:transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), filter var(--dur-fast) var(--ease-out);
+  }
+  .btn:hover:not(:disabled){transform:translateY(-1px); filter:brightness(1.06); box-shadow:inset 0 1px 0 rgba(255,255,255,.34), 0 7px 18px -3px color-mix(in srgb, var(--acc) 55%, transparent), 0 2px 4px rgba(0,0,0,.30)}
+  .btn:active:not(:disabled){transform:translateY(0) scale(.97); filter:brightness(.98); box-shadow:inset 0 1px 2px rgba(0,0,0,.25), 0 1px 2px rgba(0,0,0,.20)}
+  .btn.ghost{background:var(--glass-bg) !important; color:var(--txt); -webkit-backdrop-filter:blur(8px) saturate(160%); backdrop-filter:blur(8px) saturate(160%); border:1px solid var(--line); box-shadow:inset 0 1px 0 var(--rim-color), 0 2px 8px rgba(0,0,0,.18)}
+  .btn.ghost:hover:not(:disabled){transform:translateY(-1px); border-color:var(--acc); box-shadow:var(--elev-1)}
+  .btn.ghost:active:not(:disabled){transform:translateY(0) scale(.97)}
+  .iconbtn,.smbtn,.srjump{transition:transform var(--dur-fast) var(--ease-out), border-color var(--dur-fast), box-shadow var(--dur-fast)}
+  .iconbtn:hover,.smbtn:hover,.srjump:hover{transform:translateY(-1px); box-shadow:var(--elev-1)}
+  .iconbtn:active,.smbtn:active,.srjump:active{transform:translateY(0) scale(.96)}
+  .smbtn.on{background:linear-gradient(180deg, color-mix(in srgb,var(--acc) 88%,#fff 12%), var(--acc)); box-shadow:inset 0 1px 0 rgba(255,255,255,.28), 0 2px 6px rgba(0,0,0,.22)}
+  .opt{transition:transform var(--dur-fast) var(--ease-out), border-color var(--dur-fast), background var(--dur-fast), box-shadow var(--dur-fast); box-shadow:inset 0 1px 0 var(--rim-color)}
+  .opt:hover{transform:translateY(-1px); box-shadow:var(--elev-1)}
+  .opt:active{transform:translateY(0) scale(.99)}
+  .opt.sel{box-shadow:var(--elev-1), 0 0 0 1px var(--acc) inset}
+  .opt.correct{box-shadow:var(--elev-1), 0 0 0 1px var(--good) inset}
+  .opt.wrong{box-shadow:inset 0 1px 0 var(--rim-color), 0 0 0 1px var(--bad) inset}
+  .tab{background:var(--glass-bg) !important; -webkit-backdrop-filter:blur(8px) saturate(160%); backdrop-filter:blur(8px) saturate(160%); box-shadow:inset 0 1px 0 var(--rim-color); transition:transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast), color var(--dur-fast), background var(--dur-fast)}
+  .tab:hover{transform:translateY(-1px); color:var(--txt); box-shadow:var(--elev-1)}
+  .tab:active{transform:translateY(0) scale(.97)}
+  .tab.active{background:linear-gradient(180deg, color-mix(in srgb,var(--acc) 88%,#fff 12%), var(--acc)) !important; color:#fff; transform:translateY(-1px); box-shadow:inset 0 1px 0 rgba(255,255,255,.30), 0 6px 16px -4px color-mix(in srgb,var(--acc) 55%,transparent), 0 2px 4px rgba(0,0,0,.25); -webkit-backdrop-filter:none; backdrop-filter:none}
+  /* §5 glass header */
+  header{background:var(--glass-bg) !important; -webkit-backdrop-filter:blur(16px) saturate(180%); backdrop-filter:blur(16px) saturate(180%); border-bottom:1px solid var(--line); box-shadow:0 6px 20px -8px rgba(0,0,0,.40)}
+  [data-theme="light"] header{box-shadow:0 6px 20px -10px rgba(20,30,50,.18)}
+  /* §6 optional pointer tilt */
+  .tilt{transform:perspective(900px) rotateX(var(--ry,0deg)) rotateY(var(--rx,0deg)) translateY(var(--lift,0)); transition:transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); transform-style:preserve-3d; will-change:transform}
+  .tilt:hover{--lift:-2px}
+  @media (hover:none){.tilt{transform:none}}
+  /* §7 perf / a11y fallbacks */
+  @media (prefers-reduced-transparency: reduce){
+    :where(.card,.acc,.fcFace,.examBar,.tab,.btn.ghost,header){-webkit-backdrop-filter:none !important; backdrop-filter:none !important; background:var(--glass-bg-strong) !important}
+  }
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    :where(.card,.acc,.fcFace,.examBar,.tab,.btn.ghost,header){background:var(--glass-bg-strong) !important}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{transition-duration:.001ms !important}
+    .card:hover,.acc:hover,.sr:hover,.btn:hover,.tab:hover,.opt:hover{transform:none !important}
+    .aurora span{animation:none !important}
+    .tilt{transform:none !important}
+  }
+  @media print{.aurora{display:none !important}}
 </style>
 </head>
 <body>
+<div class="aurora" aria-hidden="true"><span></span><span></span><span></span></div>
 <header>
   <div class="top">
     <div class="brand">Test 3 Cram<small>Health Science 1 · Bachelor of Nursing · pass = 50%</small></div>
@@ -882,6 +1004,26 @@ applyTheme();
 renderPlan();renderSearch();renderTutor();renderVault();renderMCQshell();renderSAQ();renderExam();renderSheet();renderDiagrams();renderCardsShell();
 buildPrintSheet();
 setView(LS.get("tab","plan"));
+
+/* ---------- pointer tilt (3D liveliness) ---------- */
+(function(){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches || matchMedia("(hover:none)").matches) return;
+  const MAX=4;
+  const tag=root=>(root.querySelectorAll?root.querySelectorAll(".card:not(.tilt)"):[]).forEach(c=>c.classList.add("tilt"));
+  tag(document);
+  new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>n.nodeType===1&&tag(n)))).observe(document.body,{childList:true,subtree:true});
+  document.addEventListener("pointermove",e=>{
+    const card=e.target.closest&&e.target.closest(".tilt"); if(!card)return;
+    const r=card.getBoundingClientRect();
+    const px=(e.clientX-r.left)/r.width-.5, py=(e.clientY-r.top)/r.height-.5;
+    card.style.setProperty("--rx",(px*MAX*2).toFixed(2)+"deg");
+    card.style.setProperty("--ry",(-py*MAX*2).toFixed(2)+"deg");
+  },{passive:true});
+  document.addEventListener("pointerleave",e=>{
+    const card=e.target.closest&&e.target.closest(".tilt");
+    if(card){card.style.setProperty("--rx","0deg");card.style.setProperty("--ry","0deg");}
+  },true);
+})();
 </script>
 </body>
 </html>
