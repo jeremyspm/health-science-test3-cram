@@ -167,7 +167,11 @@
   #ttsBar select{max-width:160px}
   #ttsBar input[type=range]{width:90px;vertical-align:middle}
   .ttsLbl{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--mut)}
-  @media print{#ttsBar,#ttsChip{display:none !important}}
+  @media print{#ttsBar,#ttsChip,.playSec{display:none !important}}
+  .playSec{flex:0 0 auto;width:27px;height:27px;border-radius:50%;border:1px solid var(--acc);background:var(--acc);color:#fff;font-size:10px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;margin-left:4px}
+  .playSec:hover{filter:brightness(1.12)}
+  .playSec.on{background:var(--good);border-color:var(--good);animation:pulseSec 1.4s ease-in-out infinite}
+  @keyframes pulseSec{0%,100%{box-shadow:0 0 0 0 var(--good)}50%{box-shadow:0 0 0 4px transparent}}
   /* Print cheat sheet */
   #printSheet{display:none}
   @media print{
@@ -1172,8 +1176,26 @@ const TTS = {
 function updateTtsUi(){
   const p=$("#ttsPlay"); if(p) p.textContent = (speechSynthesis.speaking && !speechSynthesis.paused) ? "⏸" : "▶";
   const s=$("#ttsStatus"); if(s) s.textContent = !TTS.active ? "idle" : (speechSynthesis.paused ? "paused" : (TTS.loop ? "looping…" : "reading…"));
+  if(!TTS.active) $$(".playSec").forEach(b=>b.classList.remove("on"));
 }
 function showTtsBar(){ const b=$("#ttsBar"); if(b){ b.classList.add("show"); b.setAttribute("aria-hidden","false"); } }
+function addSectionPlayButtons(){
+  if(!TTS_OK) return;
+  $$("details.acc > summary").forEach(sum=>{
+    if(sum.querySelector(".playSec")) return;
+    const btn=document.createElement("button");
+    btn.className="playSec"; btn.type="button"; btn.title="Read this whole section aloud"; btn.textContent="▶";
+    btn.addEventListener("click",e=>{
+      e.preventDefault(); e.stopPropagation();
+      const acc=sum.closest("details.acc");
+      acc.open=true; acc.querySelectorAll("details").forEach(d=>d.open=true);   // open nested so all content is read
+      const body=acc.querySelector(".body")||acc;
+      const text=(body.innerText||body.textContent||"").replace(/[★▶⏸⏹✕🔁]/g," ").replace(/\bLIKELY\b/g," ").replace(/\s+/g," ").trim();
+      if(text){ $$(".playSec").forEach(b=>b.classList.remove("on")); btn.classList.add("on"); showTtsBar(); TTS.speak(text); }
+    });
+    sum.appendChild(btn);
+  });
+}
 function positionTtsChip(){
   if(!TTS_OK) return;
   const chip=$("#ttsChip"); if(!chip) return;
@@ -1221,6 +1243,7 @@ $("#printBtn").onclick=()=>{ buildPrintSheet(); window.print(); };
 applyTheme();
 renderPlan();renderSearch();renderTutor();renderVault();renderMCQshell();renderSAQ();renderExam();renderSheet();renderDiagrams();renderCardsShell();
 buildPrintSheet();
+if(TTS_OK) addSectionPlayButtons();
 setView(LS.get("tab","plan"));
 
 /* ---------- pointer tilt (3D liveliness) ---------- */
