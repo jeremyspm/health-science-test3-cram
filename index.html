@@ -159,6 +159,8 @@
   .clz-in.clz-bad{color:var(--bad);font-weight:700;background:var(--bad-bg);border-bottom-color:var(--bad);text-decoration:line-through}
   .clz-in.clz-shown{color:var(--good);font-weight:700;background:var(--good-bg);border-bottom-color:var(--good)}
   .clz-correct{color:var(--good);font-weight:700;font-size:14px;white-space:nowrap;margin-left:2px}
+  .clz-mask{display:inline-block;background:var(--bg3);border-bottom:2px dotted var(--mut);border-radius:5px 5px 0 0;color:var(--mut);letter-spacing:1px;padding:1px 5px;margin:0 1px;font-size:12px;user-select:none;vertical-align:baseline}
+  .clz-mask.clz-shown{color:var(--mut);font-style:italic;letter-spacing:0;font-size:14.5px;background:transparent;border-bottom:1px solid var(--line);padding:0 2px}
   .recmark{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
   .recbtn{border:none;color:#fff;border-radius:10px;padding:9px 14px;font-weight:700;cursor:pointer;font-size:14px}
   .recbtn.rb-got{background:var(--good)} .recbtn.rb-close{background:var(--warn)} .recbtn.rb-missed{background:var(--bad)}
@@ -698,10 +700,33 @@ function clozeMatch(typed, term){
   }
   return false;
 }
+/* Render the answer: [[tagged]] first occurrences become typed inputs, and every OTHER plain-text
+   occurrence of any key term is masked (covered) so the answer can't be read off nearby sentences.
+   Masks reveal when you Check / Show. */
+function clozeInputHtml(t){ const sz=Math.max(8,Math.min(18,t.length)); return `<span class="clz-slot"><input type="text" class="clz-in" data-term="${esc(t)}" size="${sz}" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="type the key term"></span>`; }
+function clozeMaskHtml(t){ const n=Math.max(3,Math.min(8,Math.ceil(t.replace(/\s/g,"").length/2))); return `<span class="clz-mask" data-term="${esc(t)}" title="also hidden — same word as a blank">${"▦".repeat(n)}</span>`; }
 function clozeHtml(tagged){
-  const blocks=String(tagged||"").split(/\n+/).map(b=>b.trim()).filter(Boolean);
-  const inl=s=> esc(s).replace(/\[\[([^\]]+?)\]\]/g,(m,t)=>{ const sz=Math.max(8,Math.min(18,t.length)); return `<span class="clz-slot"><input type="text" class="clz-in" data-term="${esc(t)}" size="${sz}" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="type the key term"></span>`; });
-  return blocks.map(b=>{
+  const src=String(tagged||"");
+  const terms=[...new Set([...src.matchAll(/\[\[([^\]]+?)\]\]/g)].map(m=>m[1]))];
+  const rxEsc=s=>s.replace(/[^A-Za-z0-9 ]/g,c=>String.fromCharCode(92)+c);
+  const alts=terms.slice().sort((a,b)=>b.length-a.length).map(rxEsc);
+  let maskRe=null; if(alts.length){ try{ maskRe=new RegExp("(^|[^A-Za-z0-9])("+alts.join("|")+")(?![A-Za-z0-9])","gi"); }catch(_){ maskRe=null; } }
+  const maskLiteral=part=>{
+    if(!maskRe) return esc(part);
+    let out="", last=0, m; maskRe.lastIndex=0;
+    while((m=maskRe.exec(part))!==null){
+      const start=m.index+m[1].length;
+      out += esc(part.slice(last,start)) + clozeMaskHtml(m[2]);
+      last = start + m[2].length;
+      if(maskRe.lastIndex<=m.index) maskRe.lastIndex=m.index+1;
+    }
+    return out + esc(part.slice(last));
+  };
+  const inl=block=> block.split(/(\[\[[^\]]+?\]\])/g).map(part=>{
+    const tm=part.match(/^\[\[([^\]]+?)\]\]$/);
+    return tm ? clozeInputHtml(tm[1]) : maskLiteral(part);
+  }).join("");
+  return src.split(/\n+/).map(b=>b.trim()).filter(Boolean).map(b=>{
     let m;
     if((m=b.match(/^(\(?\d{1,2}[.)])\s+([\s\S]*)/))) return `<div class="clz-li"><span class="clz-n">${esc(m[1])}</span> ${inl(m[2])}</div>`;
     if((m=b.match(/^[-•*]\s+([\s\S]*)/))) return `<div class="clz-li">• ${inl(m[1])}</div>`;
@@ -767,7 +792,7 @@ function recallShow(){
     const inputs=[...host.querySelectorAll(".clz-in")];
     let done=false;
     const setScore=ok=>{ const total=inputs.length||1; const status= ok===total?"got":(ok>=Math.ceil(total/2)?"close":"missed"); const all=LS.get("recall_status",{}); all[card.id]=status; LS.set("recall_status",all); updateRecTally(); return status; };
-    const finish=cb=>{ if(done) return; done=true; const ck=$("#recCheck"); if(ck) ck.disabled=true; inputs.forEach(i=>i.readOnly=true); cb(); };
+    const finish=cb=>{ if(done) return; done=true; const ck=$("#recCheck"); if(ck) ck.disabled=true; inputs.forEach(i=>i.readOnly=true); host.querySelectorAll(".clz-mask").forEach(sp=>{ sp.textContent=sp.dataset.term; sp.classList.add("clz-shown"); }); cb(); };
     const grade=()=>finish(()=>{ let ok=0; inputs.forEach(inp=>{ const right=clozeMatch(inp.value,inp.dataset.term); if(right){ ok++; inp.classList.add("clz-ok"); } else { inp.classList.add("clz-bad"); const s=document.createElement("span"); s.className="clz-correct"; s.textContent=" "+inp.dataset.term; inp.parentNode.appendChild(s); } });
       const total=inputs.length; setScore(ok); const h=$("#recHint");
       if(h) h.innerHTML=`<b style="color:${ok===total?"var(--good)":ok>=Math.ceil(total/2)?"var(--warn)":"var(--bad)"}">${ok} / ${total} key terms</b> ${ok===total?"— nailed it! ✅":ok>=Math.ceil(total/2)?"— close. 🟡 Misses are in red.":"— keep grinding. ❌ Answers are in red."}`; });
